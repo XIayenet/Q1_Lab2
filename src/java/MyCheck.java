@@ -46,12 +46,12 @@ public class MyCheck extends HttpServlet {
           throws ServletException, IOException {
     processRequest(request, response);
     HttpSession session = request.getSession();
-    ArrayList<String> passList = new ArrayList<String>();
-//    if (session.getAttribute("passList") != null) {
-      passList = (ArrayList<String>) session.getAttribute("passList");
-//    }
+    ArrayList<Entry> entryList = new ArrayList<Entry>();
+    if (session.getAttribute("entryList") != null) {
+      entryList = (ArrayList<Entry>) session.getAttribute("entryList");
+    }
 
-    session.setAttribute("passList", passList);
+    request.setAttribute("entryList", entryList);
     request.getRequestDispatcher("mycheck.jsp").forward(request, response);
 
   }
@@ -70,81 +70,81 @@ public class MyCheck extends HttpServlet {
     processRequest(request, response);
 
     HttpSession session = request.getSession();
+    String errorMessage = "";
+    String result = "";
 
     String txtStr = request.getParameter("txtStr").trim();
     String choice = request.getParameter("choice");
 
-    ArrayList<String> passList = new ArrayList<String>();
-    if (session.getAttribute("passList") != null) {
-      passList = (ArrayList<String>) session.getAttribute("passList");
+    ArrayList<Entry> entryList = new ArrayList<>();
+    if (session.getAttribute("entryList") != null) {
+      entryList = (ArrayList<Entry>) session.getAttribute("entryList");
     }
 
-    String errorMessage = "";
-    String result = "";
+    if (checkInputExists(entryList, txtStr)) {
+      errorMessage = "Already checked.";
+    } else {
 
-    switch (choice) {
-      case "checkPassword":
-
-        if (txtStr.trim().isEmpty()) {
-          errorMessage = "Password is invalid!";
-          request.setAttribute("errorMessage", errorMessage);
-          request.getRequestDispatcher("mycheck.jsp").forward(request, response);
-
-          break;
-        } else
-        
-        if (passList.contains(txtStr)){
-          errorMessage = "Already checked.";
-          request.setAttribute("errorMessage", errorMessage);
-          session.setAttribute("passList", passList);
-          request.getRequestDispatcher("mycheck.jsp").forward(request, response);
-          break;
-        } else
-
-        if (txtStr.length() > 10 && txtStr.matches(".*[A-Z].*") && txtStr.matches(".*[0-9].*") && txtStr.matches(".*[!@#$%^&*].*")) {
-          result = "Strong";
-          session.setAttribute("password", this);
-          request.setAttribute("result", result);
-          request.setAttribute("errorMessage", errorMessage);
-          if (!passList.contains(txtStr)) {
-            passList.add(txtStr);
+      switch (choice) {
+        case "Check password" -> {
+          if (txtStr.trim().isEmpty()) {
+            errorMessage = "Password is invalid!";
+          } else if (txtStr.length() > 10 && txtStr.matches(".*[A-Z].*") && txtStr.matches(".*[0-9].*") && txtStr.matches(".*[!@#$%^&*].*")) {
+            result = "Strong";
+            entryList.add(new Entry(txtStr, choice, result));
+          } else if (txtStr.length() >= 6 && txtStr.length() <= 10 && txtStr.matches(".*[a-zA-Z].*") && txtStr.matches(".*[0-9].*")) {
+            result = "Medium";
+          } else if (txtStr.length() < 6) {
+            result = "Weak";
           }
-          session.setAttribute("passList", passList);
-          request.getRequestDispatcher("mycheck.jsp").forward(request, response);
-          break;
-        } else if (txtStr.length() >= 6 && txtStr.length() <= 10 && txtStr.matches(".*[a-zA-Z].*") && txtStr.matches(".*[0-9].*")) {
-          result = "Medium";
-          request.setAttribute("result", result);
-          request.setAttribute("errorMessage", errorMessage);
-          request.getRequestDispatcher("mycheck.jsp").forward(request, response);
-          break;
-        } else if (txtStr.length() < 6) {
-          result = "Weak";
-          request.setAttribute("result", result);
-          request.setAttribute("errorMessage", errorMessage);
-          request.getRequestDispatcher("mycheck.jsp").forward(request, response);
+        }
+        case "Count words" -> {
+          int wordCount = 0;
+          int sentenceCount = 0;
+          if (!txtStr.isEmpty()) {
+            // Count words
+            wordCount = txtStr.split("\\s+").length;
+
+            // Count sentences
+            String[] sentences = txtStr.split("[.!?]+");
+            for (String s : sentences) {
+              if (!s.trim().isEmpty()) {
+                sentenceCount++;
+              }
+            }
+          }
+          result = "Word count: " + wordCount + "<br>Sentence count: " + sentenceCount;
+          entryList.add(new Entry(txtStr, choice, result));
+        }
+        case "Sensitive content Filtering" -> {
+          String[] restrictedWords = {"badword1", "badword2", "badword3"};
+
+          String filteredText = txtStr;
+          for (String word : restrictedWords) {
+            filteredText = filteredText.replaceAll("(?i)" + word, "***");
+          }
+          result = filteredText;
+          entryList.add(new Entry(txtStr, choice, result));
           break;
         }
-      case "countWord":
-
-        break;
-      case "contentFilter":
-
-        break;
-
-      default:
-        request.setAttribute("result", result);
-        request.setAttribute("errorMessage", errorMessage);
-        throw new AssertionError();
+      }
     }
+    session.setAttribute("entryList", entryList);
+    request.setAttribute("result", result);
+    request.setAttribute("errorMessage", errorMessage);
+    request.getRequestDispatcher("mycheck.jsp").forward(request, response);
 
   }
 
-  /**
-   * Returns a short description of the servlet.
-   *
-   * @return a String containing servlet description
-   */
+  public boolean checkInputExists(ArrayList<Entry> entryList, String input) {
+    for (Entry entry : entryList) {
+      if (entry.getInput().equals(input)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @Override
   public String getServletInfo() {
     return "Short description";
