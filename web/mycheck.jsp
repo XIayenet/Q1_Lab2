@@ -13,8 +13,8 @@
     <style>
       table, th, td{
         border: 1px solid black;
-      } 
-        
+      }
+
 
     </style>
   </head>
@@ -28,13 +28,15 @@
 
         <label for="options">Choose an option:</label>
         <select id="options" name="choice">
-          <option value="checkPassword">Check password</option>
-          <option value="countWords">Count words</option>
-          <option value="sensitiveContent">Sensitive content Filtering</option>
+          <option value="Check password">Check password</option>
+          <option value="Count words">Count words</option>
+          <option value="Sensitive content Filtering">Sensitive content Filtering</option>
         </select>
         <div>
           <span style="color: red"> ${errorMessage == null ? "" : errorMessage} </span>
-          ${result == null ? "" : result}
+          <c:if test="${not empty result}">
+            <p>${result}</p>
+          </c:if>
 
         </div>
 
@@ -42,18 +44,26 @@
       </form>
 
     </div>
-          
-          
-          
-          
+
+
+
+
     <table>
       <tr>
+        <th>Input string</th>
+        <th>Option selected</th>
         <th>Result</th>
       </tr>
-      <c:forEach var="pass" items="${passList}"> 
+      <c:forEach var="entry" items="${entryList}"> 
         <tr>
           <td>
-            ${pass}
+            ${entry.input}
+          </td>
+          <td>
+            ${entry.option}
+          </td>
+          <td>
+            ${entry.result.replace("\\n", "<br>")}
           </td>
         </tr>
       </c:forEach>
